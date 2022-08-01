@@ -1,14 +1,15 @@
 ﻿using Azihub.Utilities.Base.Tools;
 using HelmChartTestWeb.Server.Models;
 using System;
+using System.Threading;
 using HelmChartTestWeb.Server.Data;
 using Duende.IdentityServer.EntityFramework.Options;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
-using DotNet.Testcontainers.Containers.Builders;
-using DotNet.Testcontainers.Containers.Modules;
 using Xunit;
 using System.Threading.Tasks;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
 
 namespace HelmChartTestWeb.Tests.Fixtures
 {
@@ -24,16 +25,19 @@ namespace HelmChartTestWeb.Tests.Fixtures
             DotEnv.Load(".env.sample");
 
             WorkerSettings = DotEnv.Load<WorkerSettings>();
+
             _testcontainersBuilder = new TestcontainersBuilder<TestcontainersContainer>()
               .WithImage("mcr.microsoft.com/mssql/server:2019-latest")
               .WithName(WorkerSettings.DbContainerName)
               .WithEnvironment("ACCEPT_EULA","y")
               .WithEnvironment("SA_PASSWORD", WorkerSettings.DbPassword)
-              .WithPortBinding(WorkerSettings.DbServerPort)
+              .WithEnvironment("MSSQL_SA_PASSWORD", WorkerSettings.DbPassword)
+              .WithPortBinding(WorkerSettings.DbServerPort, 1433)
               .WithCleanUp(true)
               .Build();
 
             _testcontainersBuilder.StartAsync().GetAwaiter().GetResult();
+            Thread.Sleep(10000);
             DbContext = CreateContext();
         }
 
@@ -49,11 +53,13 @@ namespace HelmChartTestWeb.Tests.Fixtures
 
         private DbContextOptions<ApplicationDbContext> GetDbContextOptions()
         {
-            WorkerSettings.DbServerHost = ".";
-            WorkerSettings.DbUsername = "sa";
             string connectionString = WorkerSettings.GetDbConnectionString();
             return new DbContextOptionsBuilder<ApplicationDbContext>()
-               .UseSqlServer(connectionString).Options;
+               .UseSqlServer(connectionString, builder =>
+               {
+                   builder.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+               }
+               ).Options;
         }
 
         private static IOptions<OperationalStoreOptions> GetOperationalStoreOptions()
