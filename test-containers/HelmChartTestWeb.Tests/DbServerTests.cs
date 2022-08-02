@@ -30,7 +30,6 @@ namespace HelmChartTestWeb.Tests
         {
             ApplicationDbContext dbContext = DbServerFixture.DbContext;
 
-            dbContext.Database.EnsureCreated();
             dbContext.Database.Migrate();
 
             Assert.True(Connectable(dbContext));

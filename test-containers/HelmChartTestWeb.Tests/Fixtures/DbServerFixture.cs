@@ -37,7 +37,6 @@ namespace HelmChartTestWeb.Tests.Fixtures
               .Build();
 
             _testcontainersBuilder.StartAsync().GetAwaiter().GetResult();
-            Thread.Sleep(10000);
             DbContext = CreateContext();
         }
 

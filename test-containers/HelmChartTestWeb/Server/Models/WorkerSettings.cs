@@ -4,7 +4,7 @@ namespace HelmChartTestWeb.Server.Models
 {
     public class WorkerSettings
     {
-        [EnvName("DB_SERVER_HOST")] public string DbServerHost { get; set; } = null!;
+        public string DbServerHost { get; set; } = null!;
         public ushort DbServerPort { get; set; }
         public string DbContainerName { get; set; } = null!;
         public string DbName { get; set; } = null!;
@@ -16,14 +16,10 @@ namespace HelmChartTestWeb.Server.Models
         public string GetDbConnectionString()
         {
             return $@"Data Source={DbServerHost}\,{DbServerPort};" +
-                   //$"Database={DbName};" +
                    $"User ID={DbUsername};" +
                    $"Password={DbPassword};" +
-                   $"Initial Catalog=master;" +
-                   $"Persist Security Info=True;";// +
-                   //$"Trusted_Connection={DbTrustedConnection};"; //+
-            //$"MultipleActiveResultSets={DbMultipleActiveResultSets};";
-            //Data Source=localhost,1533;Initial Catalog=master;Persist Security Info=True;User ID=sa;Password=***********
+                   $"Initial Catalog={DbName};" +
+                   $"Persist Security Info=True;";
         }
     }
 }
