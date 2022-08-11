@@ -10,6 +10,7 @@ using Xunit;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
+using System.Collections.Generic;
 
 namespace HelmChartTestWeb.Tests.Fixtures
 {
@@ -28,15 +29,26 @@ namespace HelmChartTestWeb.Tests.Fixtures
 
             _testcontainersBuilder = new TestcontainersBuilder<TestcontainersContainer>()
               .WithImage("mcr.microsoft.com/mssql/server:2019-latest")
-              .WithName(WorkerSettings.DbContainerName)
+              .WithName(WorkerSettings.DbContainerName+"-mason")
               .WithEnvironment("ACCEPT_EULA","y")
               .WithEnvironment("SA_PASSWORD", WorkerSettings.DbPassword)
               .WithEnvironment("MSSQL_SA_PASSWORD", WorkerSettings.DbPassword)
               .WithPortBinding(WorkerSettings.DbServerPort, 1433)
               .WithCleanUp(true)
+              .WithDockerEndpoint("tcp://10.254.7.46:2375")
               .Build();
 
             _testcontainersBuilder.StartAsync().GetAwaiter().GetResult();
+
+            var result = _testcontainersBuilder.ExecAsync(new List<string>
+            {
+                "ls", "-la"
+            }).GetAwaiter().GetResult();
+
+            result = _testcontainersBuilder.ExecAsync(new List<string>
+            {
+                "sqlcmd"
+            }).GetAwaiter().GetResult();
             DbContext = CreateContext();
         }
 

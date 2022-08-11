@@ -18,7 +18,7 @@ namespace HelmChartTestWeb.Tests
 
         private static bool ValidateWorkerSettingsProperties(WorkerSettings workerSettings)
         {
-            Assert.Equal("mssql-server", workerSettings.DbServerHost);
+            Assert.Equal("127.0.0.1", workerSettings.DbServerHost);
             Assert.Equal("aspnet-HelmChartTestWeb", workerSettings.DbName);
             Assert.Equal("sa", workerSettings.DbUsername);
             Assert.Equal("JAsdfi7125o1ih2rt1", workerSettings.DbPassword);
