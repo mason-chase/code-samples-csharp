@@ -40,7 +40,7 @@ namespace HelmChartTestWeb.Tests
             Assert.True(DbNameMatches(dbContext));
             Assert.True(TableCountMatches(dbContext));
             _testOutputHelper.WriteLine(
-                $"MSSQL Server test container is available at : {DbServerFixture.MsSqlServerHost} on port {DbServerFixture.MsSqlServerContainerPublishedPort} \n" +
+                $"MSSQL Server test container is available at : {DbServerFixture.MsSqlServerHost} on port {DbServerFixture.MsSqlServerContainerPublicPort} \n" +
                 $"The Container Name is {DbServerFixture.MsSqlServerContainerName}");
             Debugger.Break();
         }

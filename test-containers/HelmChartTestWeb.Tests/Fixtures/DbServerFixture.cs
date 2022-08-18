@@ -16,11 +16,12 @@ namespace HelmChartTestWeb.Tests.Fixtures
 {
     public class DbServerFixture : IAsyncLifetime, IDisposable
     {
+        private const int MsSqlServerDefaultPort = 1433;
         private WorkerSettings WorkerSettings { get; }
 
-        private readonly TestcontainersContainer _testcontainersBuilder;
+        private readonly TestcontainersContainer _testContainers;
         public ApplicationDbContext DbContext { get; }
-        public int MsSqlServerContainerPublishedPort { get; } = new Random().Next(1025, 65535);
+        public int MsSqlServerContainerPublicPort { get; }
         private readonly string _msSqlServerContainerNameSuffix = Guid.NewGuid().ToString();
         public string MsSqlServerContainerName { get; }
         public string MsSqlServerHost { get; }
@@ -35,25 +36,27 @@ namespace HelmChartTestWeb.Tests.Fixtures
              var dockerEngineHost = WorkerSettings.DockerEngineHost;
              var dockerEnginePort = WorkerSettings.DockerEnginePort;
             
-            _testcontainersBuilder = new TestcontainersBuilder<TestcontainersContainer>()
+            _testContainers = new TestcontainersBuilder<TestcontainersContainer>()
               .WithImage("mcr.microsoft.com/mssql/server:2019-latest")
               .WithName(MsSqlServerContainerName)
               .WithEnvironment("ACCEPT_EULA","y")
               .WithEnvironment("SA_PASSWORD", WorkerSettings.DbPassword)
               .WithEnvironment("MSSQL_SA_PASSWORD", WorkerSettings.DbPassword)
-              .WithPortBinding(MsSqlServerContainerPublishedPort, 1433)
+              .WithPortBinding(MsSqlServerDefaultPort, assignRandomHostPort: true)
               .WithCleanUp(true)
               .WithDockerEndpoint($"tcp://{dockerEngineHost}:{dockerEnginePort}")
               .Build();
 
-            _testcontainersBuilder.StartAsync().GetAwaiter().GetResult();
+            _testContainers.StartAsync().GetAwaiter().GetResult();
 
-            var result = _testcontainersBuilder.ExecAsync(new List<string>
+            MsSqlServerContainerPublicPort = _testContainers.GetMappedPublicPort(MsSqlServerDefaultPort);
+            
+            var result = _testContainers.ExecAsync(new List<string>
             {
                 "ls", "-la"
             }).GetAwaiter().GetResult();
 
-            result = _testcontainersBuilder.ExecAsync(new List<string>
+            result = _testContainers.ExecAsync(new List<string>
             {
                 "sqlcmd"
             }).GetAwaiter().GetResult();
@@ -72,7 +75,7 @@ namespace HelmChartTestWeb.Tests.Fixtures
 
         private DbContextOptions<ApplicationDbContext> GetDbContextOptions()
         {
-            string connectionString = WorkerSettings.GetDbConnectionString(MsSqlServerContainerPublishedPort);
+            string connectionString = WorkerSettings.GetDbConnectionString(MsSqlServerContainerPublicPort);
             return new DbContextOptionsBuilder<ApplicationDbContext>()
                .UseSqlServer(connectionString, builder =>
                {
@@ -89,9 +92,9 @@ namespace HelmChartTestWeb.Tests.Fixtures
 
         public void Dispose()
         {
-            if (_testcontainersBuilder is not null)
+            if (_testContainers is not null)
             {
-                Task.Run( ()=>_testcontainersBuilder.DisposeAsync());
+                Task.Run( ()=>_testContainers.DisposeAsync());
             }
 
             GC.SuppressFinalize(this);
@@ -104,7 +107,7 @@ namespace HelmChartTestWeb.Tests.Fixtures
 
         public Task DisposeAsync()
         {
-            return _testcontainersBuilder.DisposeAsync().AsTask();
+            return _testContainers.DisposeAsync().AsTask();
         }
     }
 }
