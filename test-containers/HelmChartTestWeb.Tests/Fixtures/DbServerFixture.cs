@@ -43,7 +43,7 @@ namespace HelmChartTestWeb.Tests.Fixtures
               .WithEnvironment("MSSQL_SA_PASSWORD", WorkerSettings.DbPassword)
               .WithPortBinding(MsSqlServerContainerPublishedPort, 1433)
               .WithCleanUp(true)
-              .WithDockerEndpoint("tcp://10.254.7.46:2375")
+              .WithDockerEndpoint($"tcp://{dockerEngineHost}:{dockerEnginePort}")
               .Build();
 
             _testcontainersBuilder.StartAsync().GetAwaiter().GetResult();
