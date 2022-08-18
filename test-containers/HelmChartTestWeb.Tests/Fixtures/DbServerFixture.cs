@@ -20,20 +20,28 @@ namespace HelmChartTestWeb.Tests.Fixtures
 
         private readonly TestcontainersContainer _testcontainersBuilder;
         public ApplicationDbContext DbContext { get; }
+        public int MsSqlServerContainerPublishedPort { get; } = new Random().Next(1025, 65535);
+        private readonly string _msSqlServerContainerNameSuffix = Guid.NewGuid().ToString();
+        public string MsSqlServerContainerName { get; }
+        public string MsSqlServerHost { get; }
 
         public DbServerFixture()
         {
-            DotEnv.Load(".env.sample");
+            DotEnv.Load(".env.test-container");
 
             WorkerSettings = DotEnv.Load<WorkerSettings>();
-
+             MsSqlServerContainerName = $"{WorkerSettings.DbContainerBaseName}-{_msSqlServerContainerNameSuffix}";
+             MsSqlServerHost = WorkerSettings.DockerEngineHost;
+             var dockerEngineHost = WorkerSettings.DockerEngineHost;
+             var dockerEnginePort = WorkerSettings.DockerEnginePort;
+            
             _testcontainersBuilder = new TestcontainersBuilder<TestcontainersContainer>()
               .WithImage("mcr.microsoft.com/mssql/server:2019-latest")
-              .WithName(WorkerSettings.DbContainerName+"-mason")
+              .WithName(MsSqlServerContainerName)
               .WithEnvironment("ACCEPT_EULA","y")
               .WithEnvironment("SA_PASSWORD", WorkerSettings.DbPassword)
               .WithEnvironment("MSSQL_SA_PASSWORD", WorkerSettings.DbPassword)
-              .WithPortBinding(WorkerSettings.DbServerPort, 1433)
+              .WithPortBinding(MsSqlServerContainerPublishedPort, 1433)
               .WithCleanUp(true)
               .WithDockerEndpoint("tcp://10.254.7.46:2375")
               .Build();
@@ -64,7 +72,7 @@ namespace HelmChartTestWeb.Tests.Fixtures
 
         private DbContextOptions<ApplicationDbContext> GetDbContextOptions()
         {
-            string connectionString = WorkerSettings.GetDbConnectionString();
+            string connectionString = WorkerSettings.GetDbConnectionString(MsSqlServerContainerPublishedPort);
             return new DbContextOptionsBuilder<ApplicationDbContext>()
                .UseSqlServer(connectionString, builder =>
                {
