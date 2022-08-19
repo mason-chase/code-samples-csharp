@@ -7,19 +7,23 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace HelmChartTestWeb.Tests
 {
     public class DbServerTests : IClassFixture<WorkerSettingsFixture>, IClassFixture<DbServerFixture>
     {
         private DbServerFixture DbServerFixture { get; }
+        private readonly ITestOutputHelper _testOutputHelper;
         private const int DEFAULT_IDENTITY_TABLE = 10;
 
         private readonly WorkerSettings _workerSettings;
 
-        public DbServerTests(DbServerFixture dbServerFixture, WorkerSettingsFixture workerSettingsFixture)
+        public DbServerTests(DbServerFixture dbServerFixture, WorkerSettingsFixture workerSettingsFixture,
+            ITestOutputHelper testOutputHelper)
         {
             DbServerFixture = dbServerFixture;
+            _testOutputHelper = testOutputHelper;
             _workerSettings = workerSettingsFixture.WorkerSettings;
         }
 
@@ -35,6 +39,9 @@ namespace HelmChartTestWeb.Tests
             Assert.True(Connectable(dbContext));
             Assert.True(DbNameMatches(dbContext));
             Assert.True(TableCountMatches(dbContext));
+            _testOutputHelper.WriteLine(
+                $"MSSQL Server test container is available at : {DbServerFixture.MsSqlServerHost} on port {DbServerFixture.MsSqlServerContainerPublicPort} \n" +
+                $"The Container Name is {DbServerFixture.MsSqlServerContainerName}");
             Debugger.Break();
         }
 
@@ -54,9 +61,9 @@ namespace HelmChartTestWeb.Tests
         private static bool TableCountMatches(ApplicationDbContext dbContext)
         {
             var tables = dbContext.Model.GetEntityTypes()
-                                        .Select(t => t.GetTableName())
-                                        .Distinct()
-                                        .ToList();
+                .Select(t => t.GetTableName())
+                .Distinct()
+                .ToList();
             Assert.Equal(DEFAULT_IDENTITY_TABLE, tables.Count);
             return true;
         }

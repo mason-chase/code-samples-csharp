@@ -4,18 +4,19 @@ namespace HelmChartTestWeb.Server.Models
 {
     public class WorkerSettings
     {
-        public string DbServerHost { get; set; } = null!;
-        public ushort DbServerPort { get; set; }
-        public string DbContainerName { get; set; } = null!;
+        public int DockerEnginePort { get; set; }
+        public string DockerEngineHost { get; set; } = null!;
+        public ushort DbServerPort { get; set; } = 1433;
+        public string DbContainerBaseName { get; set; } = null!;
         public string DbName { get; set; } = null!;
         public string DbUsername { get; set; } = null!;
         public string DbPassword { get; set; } = null!;
         public bool DbTrustedConnection { get; set; }
         public bool DbMultipleActiveResultSets { get; set; }
 
-        public string GetDbConnectionString()
+        public string GetDbConnectionString(int port)
         {
-            return $@"Data Source={DbServerHost}\,{DbServerPort};" +
+            return $@"Data Source={DockerEngineHost},{port};" +
                    $"User ID={DbUsername};" +
                    $"Password={DbPassword};" +
                    $"Initial Catalog={DbName};" +
